@@ -1,14 +1,22 @@
 # 人体関節 3D ビューア
 
-## 起動方法
+## GitHub Pagesで利用する場合
 
-プロジェクトフォルダーをカレントディレクトリにして、次のコマンドでPythonの静的サーバーを起動します。
+GitHubにリポジトリを作成しただけでは、Webサイトの配信は始まりません。GitHub側で **Settings → Pages** を開き、**Deploy from a branch**を選び、`index.html`があるブランチと`/(root)`を公開元に指定してください。公開完了後はPages設定に表示されるURLから利用できます。
+
+この設定が済めば、Web上で使うためにローカルサーバーを立ち上げる必要はありません。HTMLのJS/CSS参照は、リポジトリ名を含むURLでも動く相対パスにしています。
+
+GitHub Pagesのサイトはインターネット上に公開されます。リポジトリが非公開でも、Pagesの公開サイトは公開される場合があるため、実測関節データなどを含めないでください。[GitHub Pagesの作成手順](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site)
+
+## ローカルでプレビューする場合（任意）
+
+`file://`で直接開くとESモジュールの読み込みが制限されるブラウザーがあります。ローカルで確認するときだけ、プロジェクトフォルダーをカレントディレクトリにして次を実行します。
 
 ```bash
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-ブラウザーで <http://127.0.0.1:8000/> を開きます。Three.js は jsDelivr CDN から読み込むため、表示にはインターネット接続が必要です。
+ブラウザーで <http://127.0.0.1:8000/> を開きます。Three.jsはjsDelivr CDNから読み込むため、ローカル/Pagesのどちらでもインターネット接続が必要です。
 
 ## 現在の開発範囲
 
