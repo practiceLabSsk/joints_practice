@@ -1,0 +1,55 @@
+# Node.js dependencies, caches, and generated output (if introduced later)
+node_modules/
+.npm/
+.vite/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Local environment values and credentials
+.env
+.env.*
+!.env.example
+credentials*.json
+service-account*.json
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local motion-capture data can contain sensitive movement information
+*.csv
+*.CSV
+*.tsv
+*.TSV
+!data/examples/*.csv
+!data/examples/*.CSV
+!data/examples/*.tsv
+!data/examples/*.TSV
+/data/raw/
+/data/private/
+/recordings/
+/captures/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Logs and temporary/editor files
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.tmp
+*.bak
+*.swp
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
