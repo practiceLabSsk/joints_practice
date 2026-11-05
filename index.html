@@ -19,6 +19,7 @@
           <div>
             <p class="eyebrow">MOTION LAB</p>
             <h1>人体関節 3D ビューア</h1>
+            <p class="brand-caption">関節座標を編集して骨格を確認</p>
           </div>
         </div>
         <div class="renderer-status" aria-live="polite">
@@ -34,28 +35,33 @@
             <h2 id="controls-heading">関節位置</h2>
           </div>
 
-          <label class="field-label" for="joint-select">対象の関節</label>
+          <label class="field-label" for="joint-select">編集する関節</label>
           <select id="joint-select"></select>
+          <div class="selection-summary" aria-live="polite">
+            <span id="selected-joint-side" class="joint-side joint-side-center">中央</span>
+            <strong id="selected-joint-name">関節を選択</strong>
+            <span class="selection-hint">この点のXYZ座標を編集中</span>
+          </div>
 
           <div class="coordinate-controls" aria-label="選択中の関節の座標">
             <div class="axis-control">
-              <label for="coordinate-x">X座標</label>
+              <label for="coordinate-x">X座標 <span>(m)</span></label>
               <input id="coordinate-x" type="number" step="any" inputmode="decimal" />
               <input id="coordinate-x-slider" type="range" min="-3" max="3" step="0.01" aria-label="X座標スライダー" />
             </div>
             <div class="axis-control">
-              <label for="coordinate-y">Y座標</label>
+              <label for="coordinate-y">Y座標 <span>(m)</span></label>
               <input id="coordinate-y" type="number" step="any" inputmode="decimal" />
               <input id="coordinate-y-slider" type="range" min="-3" max="3" step="0.01" aria-label="Y座標スライダー" />
             </div>
             <div class="axis-control">
-              <label for="coordinate-z">Z座標</label>
+              <label for="coordinate-z">Z座標 <span>(m)</span></label>
               <input id="coordinate-z" type="number" step="any" inputmode="decimal" />
               <input id="coordinate-z-slider" type="range" min="-3" max="3" step="0.01" aria-label="Z座標スライダー" />
             </div>
           </div>
 
-          <p class="control-note">単位: m　/　スライダー: −3〜3 m</p>
+          <p class="control-note">スライダー範囲: −3〜3 m</p>
           <div class="panel-actions">
             <button id="reset-joints" class="primary-button" type="button">関節位置をリセット</button>
             <button id="reset-camera" class="secondary-button" type="button" disabled>カメラをリセット</button>
@@ -65,7 +71,7 @@
         <section class="viewer-panel" aria-label="3D表示">
           <div class="viewer-heading">
             <span>3D VIEWPORT</span>
-            <span class="step-label">STEP 06 / 08</span>
+            <span class="step-label">STEP 07–08 / 08</span>
           </div>
           <div id="scene-view" class="scene-view">
             <canvas id="scene-canvas" aria-label="人体関節を表示する3D画面"></canvas>
@@ -86,14 +92,15 @@
           <div class="panel-heading">
             <p class="panel-kicker">LIVE DATA</p>
             <h2 id="coordinate-heading">全関節の座標</h2>
+            <p class="panel-description">XYZ / m · <span id="joint-count">12</span>点</p>
           </div>
           <div id="coordinate-list" class="coordinate-list" role="list" aria-label="12関節のXYZ座標"></div>
         </aside>
       </div>
 
       <footer class="app-footer">
-        <span>STEP 6</span>
-        <span>12関節の座標を入力・表示できます</span>
+        <span>STEP 7–8</span>
+        <span>関節座標を編集すると、3D骨格と座標一覧がリアルタイムで更新されます</span>
       </footer>
     </main>
   </body>
