@@ -91,7 +91,7 @@ export function getCurrentPoseFrame() {
   return copyPoseFrame(currentPoseFrame);
 }
 
-// This is the handoff point a future timeline can use to display a selected frame.
+// Parsed CSV frames and other time-based sources enter the shared pose state here.
 export function setCurrentPoseFrame(frame) {
   currentPoseFrame = validatePoseFrame(frame);
   return getCurrentPoseFrame();

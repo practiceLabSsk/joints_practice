@@ -474,6 +474,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .playback-heading .panel-kicker {
@@ -481,6 +482,9 @@ h1 {
 }
 
 .playback-heading strong {
+  display: block;
+  max-width: min(52vw, 520px);
+  overflow-wrap: anywhere;
   color: #e7edf6;
   font-size: 11px;
   font-weight: 600;
@@ -521,6 +525,89 @@ h1 {
 
 .play-button:focus-visible,
 #demo-timeline:focus-visible {
+  outline: 2px solid #82c9c0;
+  outline-offset: 2px;
+}
+
+.source-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.file-picker {
+  position: relative;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.file-button,
+.source-button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border: 1px solid #3b4b61;
+  border-radius: 7px;
+  background: #172231;
+  color: #c6d0de;
+  font: inherit;
+  font-size: 9px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.file-button:hover,
+.source-button:not(:disabled):hover {
+  border-color: #71849e;
+  background: #202c3c;
+}
+
+.file-picker:focus-within .file-button,
+.source-button:focus-visible {
+  outline: 2px solid #82c9c0;
+  outline-offset: 2px;
+}
+
+.source-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.csv-status {
+  min-height: 1.4em;
+  margin: 0;
+  color: #8290a4;
+  font-size: 9px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.csv-status.is-error {
+  color: #ff9aa9;
+}
+
+.csv-format-link {
+  justify-self: start;
+  color: #83c9c0;
+  font-size: 9px;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.csv-format-link:focus-visible {
   outline: 2px solid #82c9c0;
   outline-offset: 2px;
 }

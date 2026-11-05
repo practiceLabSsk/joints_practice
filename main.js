@@ -6,6 +6,7 @@ import {
   setJointCoordinate,
 } from "./jointData.js";
 import { DEMO_DURATION_SECONDS, getDemoFrameAt } from "./demoData.js";
+import { getCsvFrameAtTime, parseCsvPoseFrames } from "./csvData.js";
 import { createSceneRenderer } from "./sceneRenderer.js";
 
 const view = document.querySelector("#scene-view");
@@ -22,9 +23,15 @@ const jointCount = document.querySelector("#joint-count");
 const coordinateList = document.querySelector("#coordinate-list");
 const resetJointsButton = document.querySelector("#reset-joints");
 const resetCameraButton = document.querySelector("#reset-camera");
-const demoTimeline = document.querySelector("#demo-timeline");
-const demoPlayToggle = document.querySelector("#demo-play-toggle");
+const timeline = document.querySelector("#demo-timeline");
+const playToggle = document.querySelector("#demo-play-toggle");
 const playbackTime = document.querySelector("#playback-time");
+const sourceKicker = document.querySelector("#source-kicker");
+const activeSourceName = document.querySelector("#active-source-name");
+const csvFileInput = document.querySelector("#csv-file-input");
+const csvStatus = document.querySelector("#csv-status");
+const useDemoSourceButton = document.querySelector("#use-demo-source");
+const useCsvSourceButton = document.querySelector("#use-csv-source");
 
 const axes = ["x", "y", "z"];
 const sliderMinimum = -3;
@@ -41,13 +48,19 @@ const axisControls = new Map(
     },
   ]),
 );
-let currentDemoTime = 0;
-let demoPlaying = false;
+
+let sceneRenderer;
+let activeSource = "demo";
+let csvFrames = null;
+let csvFileName = "";
+let currentPlaybackTime = 0;
+let csvPlaybackTime = null;
+let lastRenderedCsvTime = null;
+let playbackActive = false;
 let playbackAnchorTime = 0;
 let playbackStartedAt = 0;
 let animationRequestId = 0;
 
-let sceneRenderer;
 try {
   sceneRenderer = createSceneRenderer({ view, canvas });
   rendererStatus.textContent = "Three.js / WebGL 準備完了";
@@ -68,54 +81,143 @@ function formatCoordinate(value) {
   return (Object.is(value, -0) ? 0 : value).toFixed(3);
 }
 
-function updatePlaybackReadout(time) {
-  const current = time.toFixed(2);
-  playbackTime.textContent = `${current} / ${DEMO_DURATION_SECONDS.toFixed(2)} 秒`;
-  demoTimeline.value = current;
-}
-
-function renderDemoFrame(time) {
-  const frame = getDemoFrameAt(time);
-  currentDemoTime = frame.time;
-  setCurrentPoseFrame(frame);
-  updatePlaybackReadout(currentDemoTime);
-  refreshJointViews();
-}
-
-function pauseDemo() {
-  if (!demoPlaying) return;
-  demoPlaying = false;
-  cancelAnimationFrame(animationRequestId);
-  demoPlayToggle.textContent = "▶ デモ再生";
-  demoPlayToggle.setAttribute("aria-pressed", "false");
-}
-
-function animateDemo(timestamp) {
-  if (!demoPlaying) return;
-  const elapsed = (timestamp - playbackStartedAt) / 1000;
-  const time = (playbackAnchorTime + elapsed) % DEMO_DURATION_SECONDS;
-  renderDemoFrame(time);
-  animationRequestId = requestAnimationFrame(animateDemo);
-}
-
-function toggleDemoPlayback() {
-  if (demoPlaying) {
-    pauseDemo();
-    return;
-  }
-
-  if (currentDemoTime >= DEMO_DURATION_SECONDS) renderDemoFrame(0);
-  demoPlaying = true;
-  playbackAnchorTime = currentDemoTime;
-  playbackStartedAt = performance.now();
-  demoPlayToggle.textContent = "⏸ 一時停止";
-  demoPlayToggle.setAttribute("aria-pressed", "true");
-  animationRequestId = requestAnimationFrame(animateDemo);
-}
-
 function sideLabel(side) {
   if (side === "center") return "中央";
   return side === "left" ? "左" : "右";
+}
+
+function getPlaybackRange() {
+  if (activeSource === "csv" && csvFrames) {
+    return {
+      start: csvFrames[0].time,
+      end: csvFrames[csvFrames.length - 1].time,
+    };
+  }
+  return { start: 0, end: DEMO_DURATION_SECONDS };
+}
+
+function updateSourceControls() {
+  const usingDemo = activeSource === "demo";
+  const range = getPlaybackRange();
+  sourceKicker.textContent = usingDemo ? "DEMO MOTION" : "CSV PLAYBACK";
+  activeSourceName.textContent = usingDemo ? "その場で歩く" : csvFileName;
+  useDemoSourceButton.disabled = usingDemo;
+  useCsvSourceButton.disabled = !csvFrames || !usingDemo;
+  timeline.min = String(range.start);
+  timeline.max = String(range.end);
+  timeline.step = usingDemo ? "0.01" : "any";
+  timeline.setAttribute(
+    "aria-label",
+    usingDemo ? "デモ動作の時間" : "CSV再生時間（サンプル時刻へ移動）",
+  );
+  resetJointsButton.textContent = usingDemo
+    ? "関節位置をリセット"
+    : "CSVの先頭へ戻る";
+  updatePlayToggle();
+}
+
+function updatePlayToggle() {
+  playToggle.textContent = playbackActive
+    ? "⏸ 一時停止"
+    : activeSource === "demo" ? "▶ デモ再生" : "▶ CSV再生";
+  playToggle.setAttribute("aria-pressed", String(playbackActive));
+}
+
+function updatePlaybackReadout(time) {
+  const range = getPlaybackRange();
+  playbackTime.textContent = `${time.toFixed(2)} / ${range.end.toFixed(2)} 秒`;
+  timeline.value = String(time);
+}
+
+function refreshCoordinateList(poseFrame) {
+  for (const joint of jointDefinitions) {
+    const row = coordinateRows.get(joint.id);
+    row.row.classList.toggle("is-selected", joint.id === selectedJointId);
+    for (const axis of axes) {
+      row.valueElements.get(axis).textContent = formatCoordinate(
+        poseFrame.joints[joint.id][axis],
+      );
+    }
+  }
+}
+
+function refreshJointViews() {
+  const poseFrame = getCurrentPoseFrame();
+  sceneRenderer?.updatePose(poseFrame);
+  refreshCoordinateList(poseFrame);
+}
+
+function renderActiveTime(time, force = false) {
+  let frame;
+  if (activeSource === "demo") {
+    frame = getDemoFrameAt(time);
+  } else if (csvFrames) {
+    frame = getCsvFrameAtTime(csvFrames, time);
+  } else {
+    return;
+  }
+
+  currentPlaybackTime = frame.time;
+  if (activeSource === "csv") csvPlaybackTime = frame.time;
+  updatePlaybackReadout(frame.time);
+
+  if (activeSource === "demo" || force || lastRenderedCsvTime !== frame.time) {
+    setCurrentPoseFrame(frame);
+    if (activeSource === "csv") lastRenderedCsvTime = frame.time;
+    refreshJointViews();
+  }
+}
+
+function pausePlayback() {
+  if (!playbackActive) return;
+  playbackActive = false;
+  cancelAnimationFrame(animationRequestId);
+  updatePlayToggle();
+}
+
+function animatePlayback(timestamp) {
+  if (!playbackActive) return;
+  const elapsed = (timestamp - playbackStartedAt) / 1000;
+  const requestedTime = playbackAnchorTime + elapsed;
+
+  if (activeSource === "demo") {
+    renderActiveTime(requestedTime % DEMO_DURATION_SECONDS);
+  } else {
+    const { end } = getPlaybackRange();
+    if (requestedTime >= end) {
+      renderActiveTime(end, true);
+      pausePlayback();
+      return;
+    }
+    renderActiveTime(requestedTime);
+  }
+
+  animationRequestId = requestAnimationFrame(animatePlayback);
+}
+
+function togglePlayback() {
+  if (playbackActive) {
+    pausePlayback();
+    return;
+  }
+
+  const { start, end } = getPlaybackRange();
+  if (activeSource === "csv" && currentPlaybackTime >= end) {
+    renderActiveTime(start, true);
+  } else if (activeSource === "demo" && currentPlaybackTime >= end) {
+    renderActiveTime(0, true);
+  }
+
+  playbackActive = true;
+  playbackAnchorTime = currentPlaybackTime;
+  playbackStartedAt = performance.now();
+  updatePlayToggle();
+  animationRequestId = requestAnimationFrame(animatePlayback);
+}
+
+function sideLabelFor(joint) {
+  selectedJointSide.className = `joint-side joint-side-${joint.side}`;
+  selectedJointSide.textContent = sideLabel(joint.side);
 }
 
 function buildJointSelector() {
@@ -182,8 +284,7 @@ function syncSelectedJointControls(poseFrame = getCurrentPoseFrame()) {
   const joint = jointsById.get(selectedJointId);
   const position = poseFrame.joints[selectedJointId];
   selectedJointName.textContent = joint.name;
-  selectedJointSide.className = `joint-side joint-side-${joint.side}`;
-  selectedJointSide.textContent = sideLabel(joint.side);
+  sideLabelFor(joint);
 
   for (const axis of axes) {
     const control = axisControls.get(axis);
@@ -203,24 +304,6 @@ function syncSelectedJointControls(poseFrame = getCurrentPoseFrame()) {
   sceneRenderer?.setSelectedJoint(selectedJointId);
 }
 
-function refreshCoordinateList(poseFrame) {
-  for (const joint of jointDefinitions) {
-    const row = coordinateRows.get(joint.id);
-    row.row.classList.toggle("is-selected", joint.id === selectedJointId);
-    for (const axis of axes) {
-      row.valueElements.get(axis).textContent = formatCoordinate(
-        poseFrame.joints[joint.id][axis],
-      );
-    }
-  }
-}
-
-function refreshJointViews() {
-  const poseFrame = getCurrentPoseFrame();
-  sceneRenderer?.updatePose(poseFrame);
-  refreshCoordinateList(poseFrame);
-}
-
 function selectJoint(jointId) {
   selectedJointId = jointId;
   jointSelect.value = jointId;
@@ -230,7 +313,7 @@ function selectJoint(jointId) {
 }
 
 function updateSelectedCoordinate(axis, source) {
-  pauseDemo();
+  pausePlayback();
   const control = axisControls.get(axis);
   const value = source === "slider" ? control.slider.valueAsNumber : control.number.valueAsNumber;
   if (!Number.isFinite(value)) return;
@@ -245,18 +328,76 @@ function updateSelectedCoordinate(axis, source) {
   refreshJointViews();
 }
 
+function clearCsvStatusError() {
+  csvStatus.classList.remove("is-error");
+}
+
+async function loadCsvFile(file) {
+  clearCsvStatusError();
+  try {
+    const frames = parseCsvPoseFrames(await file.text());
+    pausePlayback();
+    csvFrames = frames;
+    csvFileName = file.name;
+    csvPlaybackTime = frames[0].time;
+    lastRenderedCsvTime = null;
+    activeSource = "csv";
+    currentPlaybackTime = frames[0].time;
+    updateSourceControls();
+    renderActiveTime(currentPlaybackTime, true);
+    csvStatus.textContent = `${file.name} · ${frames.length}行 · ${frames[0].time}〜${frames[frames.length - 1].time}秒`;
+  } catch (error) {
+    csvStatus.classList.add("is-error");
+    csvStatus.textContent = `読み込みできませんでした: ${error.message}`;
+  } finally {
+    csvFileInput.value = "";
+  }
+}
+
+function switchToDemo() {
+  pausePlayback();
+  activeSource = "demo";
+  currentPlaybackTime = 0;
+  updateSourceControls();
+  renderActiveTime(0, true);
+  csvStatus.classList.remove("is-error");
+  csvStatus.textContent = csvFrames
+    ? `デモ再生中 · ${csvFileName} は読み込み済みです`
+    : "JavaScriptの仮データです。CSV形式はCSV_FORMAT.mdを参照してください。";
+}
+
+function switchToCsv() {
+  if (!csvFrames) return;
+  pausePlayback();
+  activeSource = "csv";
+  currentPlaybackTime = csvPlaybackTime ?? csvFrames[0].time;
+  updateSourceControls();
+  renderActiveTime(currentPlaybackTime, true);
+  csvStatus.classList.remove("is-error");
+  csvStatus.textContent = `${csvFileName} · ${csvFrames.length}行 · ${csvFrames[0].time}〜${csvFrames[csvFrames.length - 1].time}秒`;
+}
+
+function resetActiveSource() {
+  pausePlayback();
+  if (activeSource === "demo") {
+    currentPlaybackTime = 0;
+    const poseFrame = resetJointPositions();
+    updatePlaybackReadout(0);
+    syncSelectedJointControls(poseFrame);
+    sceneRenderer?.updatePose(poseFrame);
+    refreshCoordinateList(poseFrame);
+  } else if (csvFrames) {
+    renderActiveTime(csvFrames[0].time, true);
+  }
+}
+
 buildJointSelector();
 buildCoordinateRows();
-demoTimeline.max = String(DEMO_DURATION_SECONDS);
-updatePlaybackReadout(0);
-const initialPoseFrame = getCurrentPoseFrame();
-syncSelectedJointControls(initialPoseFrame);
-refreshCoordinateList(initialPoseFrame);
-sceneRenderer?.updatePose(initialPoseFrame);
+updateSourceControls();
+renderActiveTime(0, true);
+syncSelectedJointControls();
 
-jointSelect.addEventListener("change", () => {
-  selectJoint(jointSelect.value);
-});
+jointSelect.addEventListener("change", () => selectJoint(jointSelect.value));
 
 for (const axis of axes) {
   const control = axisControls.get(axis);
@@ -267,20 +408,16 @@ for (const axis of axes) {
   control.slider.addEventListener("input", () => updateSelectedCoordinate(axis, "slider"));
 }
 
-demoPlayToggle.addEventListener("click", toggleDemoPlayback);
-demoTimeline.addEventListener("input", () => {
-  pauseDemo();
-  renderDemoFrame(demoTimeline.valueAsNumber);
+playToggle.addEventListener("click", togglePlayback);
+timeline.addEventListener("input", () => {
+  pausePlayback();
+  renderActiveTime(timeline.valueAsNumber, true);
 });
-
-resetJointsButton.addEventListener("click", () => {
-  pauseDemo();
-  currentDemoTime = 0;
-  updatePlaybackReadout(0);
-  const poseFrame = resetJointPositions();
-  syncSelectedJointControls(poseFrame);
-  sceneRenderer?.updatePose(poseFrame);
-  refreshCoordinateList(poseFrame);
+csvFileInput.addEventListener("change", () => {
+  const [file] = csvFileInput.files;
+  if (file) loadCsvFile(file);
 });
-
+useDemoSourceButton.addEventListener("click", switchToDemo);
+useCsvSourceButton.addEventListener("click", switchToCsv);
+resetJointsButton.addEventListener("click", resetActiveSource);
 resetCameraButton.addEventListener("click", () => sceneRenderer?.resetCamera());
