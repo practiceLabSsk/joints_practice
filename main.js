@@ -1,11 +1,13 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
   jointConnections,
   jointData,
   resetJointPositions,
   setJointCoordinate,
 } from "./jointData.js";
+
+// three.js r105 と同じ版の OrbitControls は index.html から読み込む。
+const THREE = window.THREE;
+const OrbitControls = THREE.OrbitControls;
 
 const view = document.querySelector("#scene-view");
 const canvas = document.querySelector("#scene-canvas");
