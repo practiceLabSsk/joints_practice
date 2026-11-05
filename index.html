@@ -86,6 +86,20 @@
               <span id="scene-message-detail">左ドラッグ: 回転<br />右ドラッグ: 平行移動<br />ホイール: 拡大・縮小</span>
             </div>
           </div>
+          <div class="playback-panel" aria-label="デモ動作の再生">
+            <div class="playback-heading">
+              <div>
+                <p class="panel-kicker">DEMO MOTION</p>
+                <strong>その場で歩く</strong>
+              </div>
+              <output id="playback-time" for="demo-timeline" aria-live="off">0.00 / 2.00 秒</output>
+            </div>
+            <input id="demo-timeline" type="range" min="0" max="2" step="0.01" value="0" aria-label="デモ動作の時間" />
+            <div class="playback-actions">
+              <button id="demo-play-toggle" class="play-button" type="button" aria-pressed="false">▶ デモ再生</button>
+              <span class="demo-note">JavaScriptの仮データ · ループ再生</span>
+            </div>
+          </div>
         </section>
 
         <aside class="side-panel coordinate-panel" aria-labelledby="coordinate-heading">

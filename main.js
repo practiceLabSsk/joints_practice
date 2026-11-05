@@ -2,8 +2,10 @@ import {
   getCurrentPoseFrame,
   jointDefinitions,
   resetJointPositions,
+  setCurrentPoseFrame,
   setJointCoordinate,
 } from "./jointData.js";
+import { DEMO_DURATION_SECONDS, getDemoFrameAt } from "./demoData.js";
 import { createSceneRenderer } from "./sceneRenderer.js";
 
 const view = document.querySelector("#scene-view");
@@ -20,6 +22,9 @@ const jointCount = document.querySelector("#joint-count");
 const coordinateList = document.querySelector("#coordinate-list");
 const resetJointsButton = document.querySelector("#reset-joints");
 const resetCameraButton = document.querySelector("#reset-camera");
+const demoTimeline = document.querySelector("#demo-timeline");
+const demoPlayToggle = document.querySelector("#demo-play-toggle");
+const playbackTime = document.querySelector("#playback-time");
 
 const axes = ["x", "y", "z"];
 const sliderMinimum = -3;
@@ -36,6 +41,11 @@ const axisControls = new Map(
     },
   ]),
 );
+let currentDemoTime = 0;
+let demoPlaying = false;
+let playbackAnchorTime = 0;
+let playbackStartedAt = 0;
+let animationRequestId = 0;
 
 let sceneRenderer;
 try {
@@ -56,6 +66,51 @@ try {
 
 function formatCoordinate(value) {
   return (Object.is(value, -0) ? 0 : value).toFixed(3);
+}
+
+function updatePlaybackReadout(time) {
+  const current = time.toFixed(2);
+  playbackTime.textContent = `${current} / ${DEMO_DURATION_SECONDS.toFixed(2)} 秒`;
+  demoTimeline.value = current;
+}
+
+function renderDemoFrame(time) {
+  const frame = getDemoFrameAt(time);
+  currentDemoTime = frame.time;
+  setCurrentPoseFrame(frame);
+  updatePlaybackReadout(currentDemoTime);
+  refreshJointViews();
+}
+
+function pauseDemo() {
+  if (!demoPlaying) return;
+  demoPlaying = false;
+  cancelAnimationFrame(animationRequestId);
+  demoPlayToggle.textContent = "▶ デモ再生";
+  demoPlayToggle.setAttribute("aria-pressed", "false");
+}
+
+function animateDemo(timestamp) {
+  if (!demoPlaying) return;
+  const elapsed = (timestamp - playbackStartedAt) / 1000;
+  const time = (playbackAnchorTime + elapsed) % DEMO_DURATION_SECONDS;
+  renderDemoFrame(time);
+  animationRequestId = requestAnimationFrame(animateDemo);
+}
+
+function toggleDemoPlayback() {
+  if (demoPlaying) {
+    pauseDemo();
+    return;
+  }
+
+  if (currentDemoTime >= DEMO_DURATION_SECONDS) renderDemoFrame(0);
+  demoPlaying = true;
+  playbackAnchorTime = currentDemoTime;
+  playbackStartedAt = performance.now();
+  demoPlayToggle.textContent = "⏸ 一時停止";
+  demoPlayToggle.setAttribute("aria-pressed", "true");
+  animationRequestId = requestAnimationFrame(animateDemo);
 }
 
 function sideLabel(side) {
@@ -175,6 +230,7 @@ function selectJoint(jointId) {
 }
 
 function updateSelectedCoordinate(axis, source) {
+  pauseDemo();
   const control = axisControls.get(axis);
   const value = source === "slider" ? control.slider.valueAsNumber : control.number.valueAsNumber;
   if (!Number.isFinite(value)) return;
@@ -191,6 +247,8 @@ function updateSelectedCoordinate(axis, source) {
 
 buildJointSelector();
 buildCoordinateRows();
+demoTimeline.max = String(DEMO_DURATION_SECONDS);
+updatePlaybackReadout(0);
 const initialPoseFrame = getCurrentPoseFrame();
 syncSelectedJointControls(initialPoseFrame);
 refreshCoordinateList(initialPoseFrame);
@@ -209,7 +267,16 @@ for (const axis of axes) {
   control.slider.addEventListener("input", () => updateSelectedCoordinate(axis, "slider"));
 }
 
+demoPlayToggle.addEventListener("click", toggleDemoPlayback);
+demoTimeline.addEventListener("input", () => {
+  pauseDemo();
+  renderDemoFrame(demoTimeline.valueAsNumber);
+});
+
 resetJointsButton.addEventListener("click", () => {
+  pauseDemo();
+  currentDemoTime = 0;
+  updatePlaybackReadout(0);
   const poseFrame = resetJointPositions();
   syncSelectedJointControls(poseFrame);
   sceneRenderer?.updatePose(poseFrame);

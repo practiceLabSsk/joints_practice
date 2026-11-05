@@ -83,6 +83,10 @@ function validatePoseFrame(frame) {
 
 let currentPoseFrame = copyPoseFrame(initialPoseFrame);
 
+export function getInitialPoseFrame() {
+  return copyPoseFrame(initialPoseFrame);
+}
+
 export function getCurrentPoseFrame() {
   return copyPoseFrame(currentPoseFrame);
 }
