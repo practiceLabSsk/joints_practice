@@ -76,6 +76,7 @@ scene.add(jointGroup);
 const connectionMaterials = {
   left: new THREE.LineBasicMaterial({ color: 0x65aaff, transparent: true, opacity: 0.82 }),
   right: new THREE.LineBasicMaterial({ color: 0xff748c, transparent: true, opacity: 0.82 }),
+  center: new THREE.LineBasicMaterial({ color: 0xf1c96a, transparent: true, opacity: 0.82 }),
 };
 const connectionGroup = new THREE.Group();
 connectionGroup.name = "jointConnections";
