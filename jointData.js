@@ -1,4 +1,4 @@
-// 座標はcm単位。Y軸が上、人物の前方が+Z、人物の左側が+X。
+// X/Yはcm、Zはm。Y軸が上、人物の前方が+Z、人物の左側が+X。
 export const jointDefinitions = [
   { id: "AnkleLeft", name: "左足首 (AnkleLeft)", side: "left" },
   { id: "AnkleRight", name: "右足首 (AnkleRight)", side: "right" },
@@ -35,8 +35,8 @@ const initialPoseFrame = {
   joints: {
     AnkleLeft: { x: 12, y: 11, z: 0 },
     AnkleRight: { x: -12, y: 11, z: 0 },
-    FootLeft: { x: 12, y: 7, z: 18 },
-    FootRight: { x: -12, y: 7, z: 18 },
+    FootLeft: { x: 12, y: 7, z: 0.18 },
+    FootRight: { x: -12, y: 7, z: 0.18 },
     HandLeft: { x: 62, y: 98, z: 0 },
     HandRight: { x: -62, y: 98, z: 0 },
     KneeLeft: { x: 14, y: 49, z: 0 },

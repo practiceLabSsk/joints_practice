@@ -34,8 +34,11 @@ const useDemoSourceButton = document.querySelector("#use-demo-source");
 const useCsvSourceButton = document.querySelector("#use-csv-source");
 
 const axes = ["x", "y", "z"];
-const sliderMinimum = -300;
-const sliderMaximum = 300;
+const sliderRanges = {
+  x: { minimum: -300, maximum: 300, unit: "cm" },
+  y: { minimum: -300, maximum: 300, unit: "cm" },
+  z: { minimum: -3, maximum: 3, unit: "m" },
+};
 let selectedJointId = jointDefinitions[0].id;
 const jointsById = new Map(jointDefinitions.map((joint) => [joint.id, joint]));
 const coordinateRows = new Map();
@@ -288,16 +291,17 @@ function syncSelectedJointControls(poseFrame = getCurrentPoseFrame()) {
 
   for (const axis of axes) {
     const control = axisControls.get(axis);
+    const range = sliderRanges[axis];
     const value = position[axis];
     control.number.value = formatCoordinate(value);
     control.number.setAttribute(
       "aria-label",
-      `${joint.name} ${axis.toUpperCase()}座標（cm）`,
+      `${joint.name} ${axis.toUpperCase()}座標（${range.unit}）`,
     );
-    control.slider.value = String(Math.min(sliderMaximum, Math.max(sliderMinimum, value)));
+    control.slider.value = String(Math.min(range.maximum, Math.max(range.minimum, value)));
     control.slider.setAttribute(
       "aria-label",
-      `${joint.name} ${axis.toUpperCase()}座標スライダー`,
+      `${joint.name} ${axis.toUpperCase()}座標スライダー（${range.unit}）`,
     );
   }
 
@@ -318,11 +322,12 @@ function updateSelectedCoordinate(axis, source) {
   const value = source === "slider" ? control.slider.valueAsNumber : control.number.valueAsNumber;
   if (!Number.isFinite(value)) return;
 
+  const range = sliderRanges[axis];
   setJointCoordinate(selectedJointId, axis, value);
   if (source === "slider") {
     control.number.value = formatCoordinate(value);
   } else {
-    control.slider.value = String(Math.min(sliderMaximum, Math.max(sliderMinimum, value)));
+    control.slider.value = String(Math.min(range.maximum, Math.max(range.minimum, value)));
   }
 
   refreshJointViews();

@@ -3,18 +3,19 @@ import { jointConnections, jointDefinitions } from "./jointData.js";
 const initialCameraPosition = { x: 6, y: 5, z: 8 };
 const centimetersToMeters = 0.01;
 
-export function getHeightReferenceY(poseFrame) {
-  return Math.min(
-    poseFrame.joints.AnkleLeft.y,
-    poseFrame.joints.AnkleRight.y,
-  );
+export function getHeightReference(poseFrame) {
+  const ankleLeft = poseFrame.joints.AnkleLeft;
+  const ankleRight = poseFrame.joints.AnkleRight;
+  return ankleLeft.y <= ankleRight.y
+    ? { y: ankleLeft.y, z: ankleLeft.z }
+    : { y: ankleRight.y, z: ankleRight.z };
 }
 
-export function toSceneCoordinates(position, heightReferenceY) {
+export function toSceneCoordinates(position, heightReference) {
   return {
     x: position.x * centimetersToMeters,
-    y: (position.y - heightReferenceY) * centimetersToMeters,
-    z: position.z * centimetersToMeters,
+    y: (position.y - heightReference.y) * centimetersToMeters,
+    z: position.z - heightReference.z,
   };
 }
 
@@ -85,7 +86,7 @@ export function createSceneRenderer({ view, canvas }) {
     return { connection, line };
   });
   scene.add(connectionGroup);
-  let heightReferenceY = null;
+  let heightReference = null;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -116,20 +117,20 @@ export function createSceneRenderer({ view, canvas }) {
   resizeRenderer();
 
   function setHeightReference(poseFrame) {
-    heightReferenceY = getHeightReferenceY(poseFrame);
+    heightReference = getHeightReference(poseFrame);
   }
 
   function updatePose(poseFrame) {
-    if (heightReferenceY === null) setHeightReference(poseFrame);
+    if (heightReference === null) setHeightReference(poseFrame);
 
     for (const joint of jointDefinitions) {
-      const position = toSceneCoordinates(poseFrame.joints[joint.id], heightReferenceY);
+      const position = toSceneCoordinates(poseFrame.joints[joint.id], heightReference);
       jointMeshes.get(joint.id).position.set(position.x, position.y, position.z);
     }
 
     for (const { connection, line } of connectionLines) {
-      const start = toSceneCoordinates(poseFrame.joints[connection.startId], heightReferenceY);
-      const end = toSceneCoordinates(poseFrame.joints[connection.endId], heightReferenceY);
+      const start = toSceneCoordinates(poseFrame.joints[connection.startId], heightReference);
+      const end = toSceneCoordinates(poseFrame.joints[connection.endId], heightReference);
       const positions = line.geometry.attributes.position;
       positions.setXYZ(0, start.x, start.y, start.z);
       positions.setXYZ(1, end.x, end.y, end.z);
