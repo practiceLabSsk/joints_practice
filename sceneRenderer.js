@@ -7,15 +7,16 @@ export function getHeightReference(poseFrame) {
   const ankleLeft = poseFrame.joints.AnkleLeft;
   const ankleRight = poseFrame.joints.AnkleRight;
   return ankleLeft.y <= ankleRight.y
-    ? { y: ankleLeft.y, z: ankleLeft.z }
-    : { y: ankleRight.y, z: ankleRight.z };
+    ? { ankleId: "AnkleLeft", y: ankleLeft.y, z: ankleLeft.z }
+    : { ankleId: "AnkleRight", y: ankleRight.y, z: ankleRight.z };
 }
 
 export function toSceneCoordinates(position, heightReference) {
+  const orientation = heightReference.ankleId === "AnkleLeft" ? -1 : 1;
   return {
-    x: position.x * centimetersToMeters,
+    x: orientation * position.x * centimetersToMeters,
     y: (position.y - heightReference.y) * centimetersToMeters,
-    z: position.z - heightReference.z,
+    z: orientation * (position.z - heightReference.z),
   };
 }
 
