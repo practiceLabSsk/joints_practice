@@ -270,6 +270,8 @@ h1 {
 }
 
 .control-note {
+  display: grid;
+  gap: 4px;
   margin: 13px 0 18px;
   color: #718198;
   font-size: 10px;

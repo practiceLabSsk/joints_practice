@@ -1,6 +1,22 @@
 import { jointConnections, jointDefinitions } from "./jointData.js";
 
 const initialCameraPosition = { x: 6, y: 5, z: 8 };
+const centimetersToMeters = 0.01;
+
+export function getHeightReferenceY(poseFrame) {
+  return Math.min(
+    poseFrame.joints.AnkleLeft.y,
+    poseFrame.joints.AnkleRight.y,
+  );
+}
+
+export function toSceneCoordinates(position, heightReferenceY) {
+  return {
+    x: position.x * centimetersToMeters,
+    y: (position.y - heightReferenceY) * centimetersToMeters,
+    z: position.z * centimetersToMeters,
+  };
+}
 
 export function createSceneRenderer({ view, canvas }) {
   const THREE = window.THREE;
@@ -69,6 +85,7 @@ export function createSceneRenderer({ view, canvas }) {
     return { connection, line };
   });
   scene.add(connectionGroup);
+  let heightReferenceY = null;
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -98,15 +115,21 @@ export function createSceneRenderer({ view, canvas }) {
   }
   resizeRenderer();
 
+  function setHeightReference(poseFrame) {
+    heightReferenceY = getHeightReferenceY(poseFrame);
+  }
+
   function updatePose(poseFrame) {
+    if (heightReferenceY === null) setHeightReference(poseFrame);
+
     for (const joint of jointDefinitions) {
-      const position = poseFrame.joints[joint.id];
+      const position = toSceneCoordinates(poseFrame.joints[joint.id], heightReferenceY);
       jointMeshes.get(joint.id).position.set(position.x, position.y, position.z);
     }
 
     for (const { connection, line } of connectionLines) {
-      const start = poseFrame.joints[connection.startId];
-      const end = poseFrame.joints[connection.endId];
+      const start = toSceneCoordinates(poseFrame.joints[connection.startId], heightReferenceY);
+      const end = toSceneCoordinates(poseFrame.joints[connection.endId], heightReferenceY);
       const positions = line.geometry.attributes.position;
       positions.setXYZ(0, start.x, start.y, start.z);
       positions.setXYZ(1, end.x, end.y, end.z);
@@ -137,5 +160,5 @@ export function createSceneRenderer({ view, canvas }) {
     renderScene();
   }
 
-  return { updatePose, setSelectedJoint, resetCamera };
+  return { updatePose, setHeightReference, setSelectedJoint, resetCamera };
 }

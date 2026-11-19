@@ -8,7 +8,9 @@ CSVはUTF-8のカンマ区切りで、1行目にヘッダーを付ける場合�
 time,AnkleLeft_X,AnkleLeft_Y,AnkleLeft_Z,AnkleRight_X,AnkleRight_Y,AnkleRight_Z,FootLeft_X,FootLeft_Y,FootLeft_Z,FootRight_X,FootRight_Y,FootRight_Z,HandLeft_X,HandLeft_Y,HandLeft_Z,HandRight_X,HandRight_Y,HandRight_Z,KneeLeft_X,KneeLeft_Y,KneeLeft_Z,KneeRight_X,KneeRight_Y,KneeRight_Z,Neck_X,Neck_Y,Neck_Z,spinebase_X,spinebase_Y,spinebase_Z,spinemid_X,spinemid_Y,spinemid_Z,spineshoulder_X,spineshoulder_Y,spineshoulder_Z
 ```
 
-`time`は秒、関節座標はメートルです。数値は小数点に`.`を使います。
+`time`は秒、関節座標はセンチメートル（cm）です。数値は小数点に`.`を使います。3D描画時は座標をメートルへ換算します。
+
+描画上の高さ0は、表示を開始するフレームで左右の足首Y座標を比較し、小さい方に合わせます。この基準は同じデータの再生中に更新しません。デモとCSVを切り替えた場合は、切り替え先の先頭フレームから基準を決めます。座標一覧と編集欄には基準差し引き前のCSV座標（cm）を表示します。
 
 ## 読み込み条件
 

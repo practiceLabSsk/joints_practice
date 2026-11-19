@@ -45,23 +45,26 @@
 
           <div class="coordinate-controls" aria-label="選択中の関節の座標">
             <div class="axis-control">
-              <label for="coordinate-x">X座標 <span>(m)</span></label>
+              <label for="coordinate-x">X座標 <span>(cm)</span></label>
               <input id="coordinate-x" type="number" step="any" inputmode="decimal" />
-              <input id="coordinate-x-slider" type="range" min="-3" max="3" step="0.01" aria-label="X座標スライダー" />
+              <input id="coordinate-x-slider" type="range" min="-300" max="300" step="1" aria-label="X座標スライダー" />
             </div>
             <div class="axis-control">
-              <label for="coordinate-y">Y座標 <span>(m)</span></label>
+              <label for="coordinate-y">Y座標 <span>(cm)</span></label>
               <input id="coordinate-y" type="number" step="any" inputmode="decimal" />
-              <input id="coordinate-y-slider" type="range" min="-3" max="3" step="0.01" aria-label="Y座標スライダー" />
+              <input id="coordinate-y-slider" type="range" min="-300" max="300" step="1" aria-label="Y座標スライダー" />
             </div>
             <div class="axis-control">
-              <label for="coordinate-z">Z座標 <span>(m)</span></label>
+              <label for="coordinate-z">Z座標 <span>(cm)</span></label>
               <input id="coordinate-z" type="number" step="any" inputmode="decimal" />
-              <input id="coordinate-z-slider" type="range" min="-3" max="3" step="0.01" aria-label="Z座標スライダー" />
+              <input id="coordinate-z-slider" type="range" min="-300" max="300" step="1" aria-label="Z座標スライダー" />
             </div>
           </div>
 
-          <p class="control-note">スライダー範囲: −3〜3 m</p>
+          <p class="control-note">
+            <span>入力・一覧: cm · 描画基準: 開始時の低い足首Y</span>
+            <span>スライダー範囲: −300〜300 cm</span>
+          </p>
           <div class="panel-actions">
             <button id="reset-joints" class="primary-button" type="button">関節位置をリセット</button>
             <button id="reset-camera" class="secondary-button" type="button" disabled>カメラをリセット</button>
@@ -106,7 +109,7 @@
                 <button id="use-csv-source" class="source-button" type="button" disabled>読み込みCSV</button>
               </div>
             </div>
-            <p id="csv-status" class="csv-status" role="status" aria-live="polite">JavaScriptの仮データです。CSV形式は37列（時刻＋12関節のXYZ）です。</p>
+            <p id="csv-status" class="csv-status" role="status" aria-live="polite">JavaScriptの仮データです。CSVは37列（時刻は秒、座標はcm）です。</p>
             <a class="csv-format-link" href="./CSV_FORMAT.md">CSVの列順・入力条件</a>
           </div>
         </section>
@@ -115,7 +118,7 @@
           <div class="panel-heading">
             <p class="panel-kicker">LIVE DATA</p>
             <h2 id="coordinate-heading">全関節の座標</h2>
-            <p class="panel-description">XYZ / m · <span id="joint-count">12</span>点</p>
+            <p class="panel-description">XYZ / cm · <span id="joint-count">12</span>点</p>
           </div>
           <div id="coordinate-list" class="coordinate-list" role="list" aria-label="12関節のXYZ座標"></div>
         </aside>

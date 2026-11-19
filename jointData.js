@@ -1,4 +1,4 @@
-// 座標の前提: 1単位=1m、Y軸が上、人物の前方が+Z、人物の左側が+X。
+// 座標はcm単位。Y軸が上、人物の前方が+Z、人物の左側が+X。
 export const jointDefinitions = [
   { id: "AnkleLeft", name: "左足首 (AnkleLeft)", side: "left" },
   { id: "AnkleRight", name: "右足首 (AnkleRight)", side: "right" },
@@ -33,18 +33,18 @@ export const jointConnections = [
 const initialPoseFrame = {
   time: 0,
   joints: {
-    AnkleLeft: { x: 0.12, y: 0.11, z: 0 },
-    AnkleRight: { x: -0.12, y: 0.11, z: 0 },
-    FootLeft: { x: 0.12, y: 0.07, z: 0.18 },
-    FootRight: { x: -0.12, y: 0.07, z: 0.18 },
-    HandLeft: { x: 0.62, y: 0.98, z: 0 },
-    HandRight: { x: -0.62, y: 0.98, z: 0 },
-    KneeLeft: { x: 0.14, y: 0.49, z: 0 },
-    KneeRight: { x: -0.14, y: 0.49, z: 0 },
-    Neck: { x: 0, y: 1.47, z: 0 },
-    spinebase: { x: 0, y: 0.78, z: 0 },
-    spinemid: { x: 0, y: 1.08, z: 0 },
-    spineshoulder: { x: 0, y: 1.34, z: 0 },
+    AnkleLeft: { x: 12, y: 11, z: 0 },
+    AnkleRight: { x: -12, y: 11, z: 0 },
+    FootLeft: { x: 12, y: 7, z: 18 },
+    FootRight: { x: -12, y: 7, z: 18 },
+    HandLeft: { x: 62, y: 98, z: 0 },
+    HandRight: { x: -62, y: 98, z: 0 },
+    KneeLeft: { x: 14, y: 49, z: 0 },
+    KneeRight: { x: -14, y: 49, z: 0 },
+    Neck: { x: 0, y: 147, z: 0 },
+    spinebase: { x: 0, y: 78, z: 0 },
+    spinemid: { x: 0, y: 108, z: 0 },
+    spineshoulder: { x: 0, y: 134, z: 0 },
   },
 };
 

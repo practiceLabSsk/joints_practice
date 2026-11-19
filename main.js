@@ -34,8 +34,8 @@ const useDemoSourceButton = document.querySelector("#use-demo-source");
 const useCsvSourceButton = document.querySelector("#use-csv-source");
 
 const axes = ["x", "y", "z"];
-const sliderMinimum = -3;
-const sliderMaximum = 3;
+const sliderMinimum = -300;
+const sliderMaximum = 300;
 let selectedJointId = jointDefinitions[0].id;
 const jointsById = new Map(jointDefinitions.map((joint) => [joint.id, joint]));
 const coordinateRows = new Map();
@@ -292,7 +292,7 @@ function syncSelectedJointControls(poseFrame = getCurrentPoseFrame()) {
     control.number.value = formatCoordinate(value);
     control.number.setAttribute(
       "aria-label",
-      `${joint.name} ${axis.toUpperCase()}座標（m）`,
+      `${joint.name} ${axis.toUpperCase()}座標（cm）`,
     );
     control.slider.value = String(Math.min(sliderMaximum, Math.max(sliderMinimum, value)));
     control.slider.setAttribute(
@@ -343,6 +343,7 @@ async function loadCsvFile(file) {
     lastRenderedCsvTime = null;
     activeSource = "csv";
     currentPlaybackTime = frames[0].time;
+    sceneRenderer?.setHeightReference(frames[0]);
     updateSourceControls();
     renderActiveTime(currentPlaybackTime, true);
     csvStatus.textContent = `${file.name} · ${frames.length}行 · ${frames[0].time}〜${frames[frames.length - 1].time}秒`;
@@ -358,6 +359,7 @@ function switchToDemo() {
   pausePlayback();
   activeSource = "demo";
   currentPlaybackTime = 0;
+  sceneRenderer?.setHeightReference(getDemoFrameAt(0));
   updateSourceControls();
   renderActiveTime(0, true);
   csvStatus.classList.remove("is-error");
@@ -371,6 +373,7 @@ function switchToCsv() {
   pausePlayback();
   activeSource = "csv";
   currentPlaybackTime = csvPlaybackTime ?? csvFrames[0].time;
+  sceneRenderer?.setHeightReference(csvFrames[0]);
   updateSourceControls();
   renderActiveTime(currentPlaybackTime, true);
   csvStatus.classList.remove("is-error");
